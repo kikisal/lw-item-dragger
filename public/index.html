@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="lw-item-dragger.js"></script>
+    <title>Document</title>
+    <style>
+        .container {
+            display: flex;
+            width: 600px;
+            flex-wrap: wrap;
+        }
+
+        body {
+            background: #2b2f35;
+        }
+
+        .item {
+            width: 60px;
+            height: 60px;
+            padding: 5px;
+        }
+
+        .dragging-mode .item.dragging .item-box {
+            box-shadow: 0 0 6px rgba(0,0,0,.5);
+            opacity: .6;
+        }
+        
+        .item.on-pressed .item-box {
+            background: #434850;
+        } 
+        
+        .item-box {
+            background: #3c4047;
+            border-radius: 10px;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .dragging-mode {
+            user-select: none;
+            cursor: grabbing;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+        <div class="item"><div class="item-box"></div></div>
+    </div>
+</body>
+
+<script>
+    (() => {
+        ItemDragger.init({
+            selectors: { 
+                container: ".container", 
+                item: ".item"
+            },
+            ordering: Array.from({ length: document.querySelectorAll(".item").length }, (_, i) => i)
+        });
+        ItemDragger.currentInstance.start();
+    })();
+</script>
+</html>
