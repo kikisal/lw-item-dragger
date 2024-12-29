@@ -8,6 +8,7 @@
 
     const DEFAULT_CONTAINER_SELECTOR = ".container";
     const DEFAULT_ITEM_SELECTOR      = ".item";
+    const DEFAULT_MOVE_TO_DURATION   = 300; // 500ms
 
     let renderingContext = {currentTime: 0};
 
@@ -303,7 +304,7 @@
 
                 const [dest_j, dest_i] = [grid_j, grid_i]; // some alias
 
-                const cells = 8;
+                const cells = 5;
                 const order_dest_indx = cells * grid_i + grid_j;
 
                 if (grid_j >= 0 && grid_j < cells && grid_i >= 0) {
@@ -352,7 +353,7 @@
                                             grd_el.animator.addAnimation(FactoryTasks.moveTo({
                                                 x: (dest_j + i + 1) * this.gridSize.cellWidth,
                                                 y: dest_i * this.gridSize.cellWidth
-                                            }, 500));    
+                                            }, DEFAULT_MOVE_TO_DURATION));    
                                         }
                                     }        
                                 } else {
@@ -380,7 +381,7 @@
                                             grd_el.animator.addAnimation(FactoryTasks.moveTo({
                                                 x: (dest_j - i - 1) * this.gridSize.cellWidth,
                                                 y: dest_i * this.gridSize.cellWidth
-                                            }, 500));
+                                            }, DEFAULT_MOVE_TO_DURATION));
                                         }                            
                                     }
                                 }
@@ -430,7 +431,7 @@
                                     grd_el.animator.addAnimation(FactoryTasks.moveTo({
                                         x: cell_offset * this.gridSize.cellWidth,
                                         y: row_offset  * this.gridSize.cellWidth
-                                    }, 500));
+                                    }, DEFAULT_MOVE_TO_DURATION));
                                 }
 
                                 this.orderMatrix[order_dest_indx] = start_element;
