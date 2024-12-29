@@ -1,3 +1,9 @@
+/**
+ * @author weeki
+ * @version 2.1
+ * 
+ * @description Utility UI Functionality for dragging UI cards-like elements around
+ */
 ((m) => {
 
     const DEFAULT_CONTAINER_SELECTOR = ".container";
@@ -41,8 +47,6 @@
             const t = time / this.duration;
             const t2 = time / (this.duration + this.duration * this.curveAmount);
             
-
-
             ctx.objState.position.x = t * (this.target.x - this.startPosition.x) + this.startPosition.x;
             ctx.objState.position.y = t2 * (this.target.y - this.startPosition.y) + this.startPosition.y;
 
@@ -289,51 +293,157 @@
                 pos.x = this.mouseState.x - this.xHitBoxPortion;
                 pos.y = this.mouseState.y - this.yHitBoxPortion;
                 
+                this.draggingElement.itemElement.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+
+                
                 const boxCenter = {x: pos.x + this.gridSize.cellWidth * .5, y: pos.y + this.gridSize.cellWidth * .5};
 
                 const grid_j = Math.floor(boxCenter.x / this.gridSize.cellWidth);
                 const grid_i = Math.floor(boxCenter.y / this.gridSize.cellWidth);
 
-                // console.log(grid_j, grid_i);
-                this.draggingElement.itemElement.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+                const [dest_j, dest_i] = [grid_j, grid_i]; // some alias
 
-                if (grid_i == this.startGrid_i && grid_j != this.startGrid_j) {
-                    const cells = 8;
-                    const min_j = Math.min(grid_j, this.startGrid_j);
-                    const max_j = Math.max(grid_j, this.startGrid_j);
+                const cells = 8;
+                const order_dest_indx = cells * grid_i + grid_j;
 
-                    const spanned_elements = max_j - min_j;
-                    const dir              = (grid_j - this.startGrid_j) / Math.abs(grid_j - this.startGrid_j);
-                    
-                    const [dest_j, dest_i] = [grid_j, grid_i];
-                    if (dir < 0) {
+                if (grid_j >= 0 && grid_j < cells && grid_i >= 0) {
 
-                        for (let i = 0; i < spanned_elements; ++i) {
-                            const curr_indx = cells * dest_i + (dest_j + i);
-                            const new_indx  = cells * dest_i + (dest_j + i + 1)
+                    const start_element = this.orderMatrix[cells * this.startGrid_i + this.startGrid_j];
 
-                            const grd_el = this.gridElements[this.orderMatrix[curr_indx]];
-                            if (!grd_el)
-                                continue;
-
-                            grd_el.animator.clear();
-                            grd_el.animator.addAnimation(FactoryTasks.moveTo({
-                                x: (dest_j + i + 1) * this.gridSize.cellWidth,
-                                y: dest_i * this.gridSize.cellWidth
-                            }, 500));
-
-                            // this.orderMatrix[curr_indx] = ;
+                    if (grid_i == this.startGrid_i) {
+    
+                        if (grid_j != this.startGrid_j && grid_j < cells && grid_j >= 0 && order_dest_indx < this.orderMatrix.length && order_dest_indx >= 0) {
+    
+                            if (start_element !== undefined)
+                            {
+    
+                                const min_j = Math.min(grid_j, this.startGrid_j);
+                                const max_j = Math.max(grid_j, this.startGrid_j);
+            
+                                const spanned_elements = max_j - min_j;
+                                const dir              = (grid_j - this.startGrid_j) / Math.abs(grid_j - this.startGrid_j);
+                                
+                                let collected = undefined;
+            
+                                if (dir < 0) {
+        
+                                    for (let i = 0; i < spanned_elements + 1; ++i) {
+                                        const curr_indx = cells * dest_i + (dest_j + i);
+        
+                                        
+                                        if (curr_indx >= this.orderMatrix.length || curr_indx < 0)
+                                            continue;
+            
+                                        if (!collected) {
+                                            collected = [];
+                                            for (let j = 0; j < spanned_elements; ++j) // don't include current dragged element
+                                                collected.push(this.orderMatrix[curr_indx + j]);
+                                        }
+                                        
+                                        if (i >= spanned_elements)  {
+                                            this.orderMatrix[order_dest_indx] = start_element;
+                                        } else {
+                                            const grd_el = this.gridElements[collected[i]];
+                                            this.orderMatrix[curr_indx + 1] = collected[i];
+                                            if (!grd_el)
+                                                continue;
+            
+                                            grd_el.animator.clear();
+                                            grd_el.animator.addAnimation(FactoryTasks.moveTo({
+                                                x: (dest_j + i + 1) * this.gridSize.cellWidth,
+                                                y: dest_i * this.gridSize.cellWidth
+                                            }, 500));    
+                                        }
+                                    }        
+                                } else {
+                                    for (let i = 0; i < spanned_elements + 1; ++i) {
+                                        const curr_indx = cells * dest_i + (dest_j - i);
+                                        
+                                        if (curr_indx >= this.orderMatrix.length || curr_indx < 0)
+                                            continue;
+            
+                                        if (!collected) {
+                                            collected = [];
+                                            for (let j = 0; j < spanned_elements; ++j) // don't include current dragged element
+                                                collected.push(this.orderMatrix[curr_indx - j]);
+                                        }
+                                        
+                                        if (i >= spanned_elements)  {
+                                            this.orderMatrix[order_dest_indx] = start_element;
+                                        } else {
+                                            const grd_el = this.gridElements[collected[i]];
+                                            this.orderMatrix[curr_indx - 1] = collected[i];
+                                            if (!grd_el)
+                                                continue;
+            
+                                            grd_el.animator.clear();
+                                            grd_el.animator.addAnimation(FactoryTasks.moveTo({
+                                                x: (dest_j - i - 1) * this.gridSize.cellWidth,
+                                                y: dest_i * this.gridSize.cellWidth
+                                            }, 500));
+                                        }                            
+                                    }
+                                }
+            
+                                this.startGrid_i = grid_i;
+                                this.startGrid_j = grid_j;
+                            }
                         }
+                        // grid_i != this.startGrid_i
                     } else {
-                        
-                    }
+    
+                        if (order_dest_indx < this.orderMatrix.length && order_dest_indx >= 0) {
+                            const start_element = this.orderMatrix[cells * this.startGrid_i + this.startGrid_j];
+                            if (start_element !== undefined) {
+                                const dir = (grid_i - this.startGrid_i) / Math.abs(grid_i - this.startGrid_i);
+    
+                                let [running_i, running_j] = [dest_i, dest_j];
+                                let running_indx = cells * running_i + running_j;
+                                let start_indx   = cells * this.startGrid_i + this.startGrid_j;
+                                let indices = [];
+                                // dir > 0 down
+                                // dir < 0 up
+                                while(
+                                    running_indx != start_indx && 
+                                    running_indx >= 0 && running_indx < this.orderMatrix.length 
+                                ) {
+                                    indices.push(this.orderMatrix[running_indx]);
+                                    running_indx += -dir;
+                                }
 
-                    this.startGrid_i = grid_i;
-                    this.startGrid_j = grid_j;
-                }
-                
+                                for (let i = 0; i < indices.length; ++i) {
+                                    const offset_indx = start_indx;
+                                    const indx_dest   = offset_indx + i * dir;
+                                    const index_i     = (indices.length - 1) - i;
+
+                                    this.orderMatrix[indx_dest]     = indices[index_i];
+
+                                    const grd_el = this.gridElements[indices[index_i]];
+                                    if (!grd_el)
+                                        continue;
+
+                                    // map linear indices to 2d grid positioning 
+                                    const cell_offset = indx_dest % cells;
+                                    const row_offset  = (indx_dest - (indx_dest % cells)) / cells;
+                                    
+                                    grd_el.animator.clear();
+                                    grd_el.animator.addAnimation(FactoryTasks.moveTo({
+                                        x: cell_offset * this.gridSize.cellWidth,
+                                        y: row_offset  * this.gridSize.cellWidth
+                                    }, 500));
+                                }
+
+                                this.orderMatrix[order_dest_indx] = start_element;
+
+                                this.startGrid_i = dest_i;
+                                this.startGrid_j = dest_j;
+                            }
+                        }
+                    }   
+                }    
             }
 
+            // poll and update any animation tasks
             for (const element of this.gridElements) {
                 if (element == this.draggingElement)
                     continue;
@@ -391,6 +501,8 @@
 
             hitElement.itemElement.classList.add("dragging");
 
+            
+
             const boundingBox = this.itemElements[0].getBoundingClientRect();
             this.gridSize = {cellWidth: boundingBox.width, cellWidth: boundingBox.height};
 
@@ -406,7 +518,7 @@
             this.startGrid_i = Math.floor(boxCenter.y / this.gridSize.cellWidth);
             this.startGrid_j = Math.floor(boxCenter.x / this.gridSize.cellWidth);
 
-            console.log("starting at: ", this.startGrid_j, this.startGrid_i);
+            // console.log("starting at: ", this.startGrid_j, this.startGrid_i);
         }
         
         start() {
@@ -429,7 +541,7 @@
             const conatinerBox = this.domContainer.getBoundingClientRect();
 
             this.gridElements = [];
-            
+            let indx = 0;
             for (const itemElement of this.itemElements) {
                 const boundingBox      = itemElement.getBoundingClientRect();
                 const draggingState = {
@@ -438,6 +550,9 @@
                     animator: null,
                     itemElement: itemElement
                 };
+
+                itemElement.innerHTML = `<div class="item-box">${this.orderMatrix[indx]}</div>`;
+                indx++;
 
                 draggingState.animator = new Animator(draggingState);
 
