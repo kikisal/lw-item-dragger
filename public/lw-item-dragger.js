@@ -547,7 +547,6 @@
                 };
             }
 
-            // this.initGridElements();
             this.attachMouseEvents();
 
             const draggingLoop = (t) => {
@@ -612,34 +611,6 @@
                         cellHeight: height
                     };
                 }
-            }
-        }
-
-        initGridElements() {
-            const conatinerBox = this.domContainer.getBoundingClientRect();
-
-            this.gridElements = [];
-            let indx = 0;
-            for (const itemElement of this.itemElements) {
-                const boundingBox      = itemElement.getBoundingClientRect();
-                const draggingState = {
-                    position: {x: boundingBox.x - conatinerBox.x, y: boundingBox.y - conatinerBox.y},
-                    size: {width: boundingBox.width, height: boundingBox.height},
-                    animator: null,
-                    itemElement: itemElement
-                };
-
-                itemElement.innerHTML = `<div class="item-box">${this.orderMatrix[indx]}</div>`;
-                indx++;
-
-                draggingState.animator = new Animator(draggingState);
-
-                this.gridElements.push(draggingState);
-            }
-
-            for (const gridElement of this.gridElements) {
-                gridElement.itemElement.style.position   = "absolute";
-                gridElement.itemElement.style.transform  = `translate(${gridElement.position.x}px, ${gridElement.position.y}px)`;
             }
         }
 
