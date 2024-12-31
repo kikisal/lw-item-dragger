@@ -8,7 +8,7 @@
 
     const DEFAULT_CONTAINER_SELECTOR = ".container";
     const DEFAULT_ITEM_SELECTOR      = ".item";
-    const DEFAULT_MOVE_TO_DURATION   = 300; // 500ms
+    const DEFAULT_MOVE_TO_DURATION   = 320; // 500ms
 
     let renderingContext = {currentTime: 0};
 
@@ -42,8 +42,11 @@
         update(ctx) {
             const time = renderingContext.currentTime - this.startTime;
 
-            if (time >= this.duration)
+            if (time >= this.duration) {
+                ctx.objState.position.x = this.target.x;
+                ctx.objState.position.y = this.target.y;    
                 return true;
+            }
 
             const t = time / this.duration;
             const t2 = time / (this.duration + this.duration * this.curveAmount);
@@ -183,15 +186,16 @@
             ItemDragger.setCurrentInstance(this);
 
             this.containerSelector = conf.selectors.container || DEFAULT_CONTAINER_SELECTOR;
-            this.itemSelector      = conf.selectors.item      || DEFAULT_ITEM_SELECTOR;
+            this.cellMargin        = conf.cellMargin || { right: 0, bottom: 0 };
+
             this.domContainer      = document.querySelector(this.containerSelector);
 
-            if (!this.domContainer)
-                throw new Error("Container element not found in DOM.");
+            this.draggerStarted    = false;
 
-            this.itemElements      = this.domContainer.querySelectorAll(this.itemSelector);
+            // this.itemElements      = this.domContainer.querySelectorAll(this.itemSelector);
 
             this.gridSize          = null;
+            this.gridCells         = 6;
 
             this.mouseState        = {
                 prevX:   undefined,
@@ -217,7 +221,8 @@
 
             this.needsPositionUpdate = true;
 
-            this.orderMatrix         = conf.ordering || Array.from({ length: this.itemElements.length }, (_, i) => i);
+            this.orderMatrix         = [];
+            this.pendingElements     = [];
         }
 
         attachMouseEvents() {
@@ -297,14 +302,14 @@
                 this.draggingElement.itemElement.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
 
                 
-                const boxCenter = {x: pos.x + this.gridSize.cellWidth * .5, y: pos.y + this.gridSize.cellWidth * .5};
+                const boxCenter = {x: pos.x + this.gridSize.cellWidth * .5, y: pos.y + this.gridSize.cellHeight * .5};
 
                 const grid_j = Math.floor(boxCenter.x / this.gridSize.cellWidth);
-                const grid_i = Math.floor(boxCenter.y / this.gridSize.cellWidth);
+                const grid_i = Math.floor(boxCenter.y / this.gridSize.cellHeight);
 
                 const [dest_j, dest_i] = [grid_j, grid_i]; // some alias
 
-                const cells = 5;
+                const cells = this.gridCells;
                 const order_dest_indx = cells * grid_i + grid_j;
 
                 if (grid_j >= 0 && grid_j < cells && grid_i >= 0) {
@@ -351,8 +356,8 @@
             
                                             grd_el.animator.clear();
                                             grd_el.animator.addAnimation(FactoryTasks.moveTo({
-                                                x: (dest_j + i + 1) * this.gridSize.cellWidth,
-                                                y: dest_i * this.gridSize.cellWidth
+                                                x: (dest_j + i + 1) * (this.gridSize.cellWidth + this.cellMargin.right),
+                                                y: dest_i * (this.gridSize.cellHeight + this.cellMargin.bottom)
                                             }, DEFAULT_MOVE_TO_DURATION));    
                                         }
                                     }        
@@ -379,8 +384,8 @@
             
                                             grd_el.animator.clear();
                                             grd_el.animator.addAnimation(FactoryTasks.moveTo({
-                                                x: (dest_j - i - 1) * this.gridSize.cellWidth,
-                                                y: dest_i * this.gridSize.cellWidth
+                                                x: (dest_j - i - 1) * (this.gridSize.cellWidth + this.cellMargin.right),
+                                                y: dest_i * (this.gridSize.cellHeight + this.cellMargin.bottom)
                                             }, DEFAULT_MOVE_TO_DURATION));
                                         }                            
                                     }
@@ -429,8 +434,8 @@
                                     
                                     grd_el.animator.clear();
                                     grd_el.animator.addAnimation(FactoryTasks.moveTo({
-                                        x: cell_offset * this.gridSize.cellWidth,
-                                        y: row_offset  * this.gridSize.cellWidth
+                                        x: cell_offset * (this.gridSize.cellWidth  + this.cellMargin.right),
+                                        y: row_offset  * (this.gridSize.cellHeight + this.cellMargin.bottom)
                                     }, DEFAULT_MOVE_TO_DURATION));
                                 }
 
@@ -454,23 +459,22 @@
         }
 
         getHitElement() {
+            if (!this.gridSize)
+                return null;
+
             for (const element of this.gridElements) {
                 const pos   = element.position;
-                const size  = element.size;
+                const size  = this.gridSize;
                 const mouse = this.mouseState;
  
-                if (mouse.x > pos.x && mouse.x < pos.x + size.width &&
-                    mouse.y > pos.y && mouse.y < pos.y + size.height
+                if (mouse.x > pos.x && mouse.x < pos.x + size.cellWidth &&
+                    mouse.y > pos.y && mouse.y < pos.y + size.cellHeight
                 ) {
                     return element;
                 }
             }
 
             return null;
-        }
-
-        selectItemElements() {
-            return this.domContainer.querySelectorAll(this.itemSelector);
         }
 
         stopDragging() {
@@ -481,7 +485,8 @@
                 
                 this.draggingElement.animator.clear();
                 this.draggingElement.animator.addAnimation(FactoryTasks.moveTo({ 
-                    x: this.startGrid_j * this.gridSize.cellWidth, y: this.startGrid_i * this.gridSize.cellWidth 
+                    x: this.startGrid_j * (this.gridSize.cellWidth  + this.cellMargin.right), 
+                    y: this.startGrid_i * (this.gridSize.cellHeight + this.cellMargin.bottom)
                 }, 500));
 
                 this.draggingElement = null;
@@ -492,9 +497,10 @@
             if (this.draggingMode)
                 return;
 
-            this.itemElements = this.selectItemElements();
+            if (!this.gridSize)
+                return;
             
-            if (!this.itemElements || this.itemElements.length < 1)
+            if (!this.gridElements || this.gridElements.length < 1)
                 return;
             
             this.draggingMode = true;
@@ -502,30 +508,46 @@
 
             hitElement.itemElement.classList.add("dragging");
 
-            
-
-            const boundingBox = this.itemElements[0].getBoundingClientRect();
-            this.gridSize = {cellWidth: boundingBox.width, cellWidth: boundingBox.height};
-
-
             // compute the current i, j of the selected element to drag.
             const pos = this.draggingElement.position;
 
             pos.x = this.mouseState.x - this.xHitBoxPortion;
             pos.y = this.mouseState.y - this.yHitBoxPortion;
             
-            const boxCenter = {x: pos.x + this.gridSize.cellWidth * .5, y: pos.y + this.gridSize.cellWidth * .5};
+            const boxCenter = {x: pos.x + this.gridSize.cellWidth * .5, y: pos.y + this.gridSize.cellHeight * .5};
             
-            this.startGrid_i = Math.floor(boxCenter.y / this.gridSize.cellWidth);
+            this.startGrid_i = Math.floor(boxCenter.y / this.gridSize.cellHeight);
             this.startGrid_j = Math.floor(boxCenter.x / this.gridSize.cellWidth);
 
             // console.log("starting at: ", this.startGrid_j, this.startGrid_i);
         }
         
         start() {
+            if (this.draggerStarted)
+                return;
+
+            this.draggerStarted = true;
+
             renderingContext = {currentTime: 0};
 
-            this.initGridElements();
+            if (!this.domContainer) {
+                this.domContainer      = document.querySelector(this.containerSelector);
+                if (!this.domContainer)
+                    throw new Error("Container element not found in DOM.");
+            }
+
+            while (this.pendingElements.length > 0)
+                this.domContainer.appendChild(this.pendingElements.shift());
+
+            if (!this.gridSize && this.gridElements.length > 0) {
+                const {width, height} = this.gridElements[0].itemElement.getBoundingClientRect();
+                this.gridSize = {
+                    cellWidth:  width,
+                    cellHeight: height
+                };
+            }
+
+            // this.initGridElements();
             this.attachMouseEvents();
 
             const draggingLoop = (t) => {
@@ -536,6 +558,61 @@
             };
 
             requestAnimationFrame(draggingLoop);
+        }
+
+        gridLocation(index) {
+            return [
+                index % this.gridCells,
+                (index - (index % this.gridCells)) / this.gridCells
+            ];
+        }
+
+        addGridElement(element) {
+            if (!element || !(element instanceof HTMLElement))
+                return;
+
+            element.style.position = "absolute";
+
+            const new_index                 = this.orderMatrix.length;            
+            const [cell_offset, row_offset] = this.gridLocation(new_index);
+
+            const cellSize = {cellWidth: 0, cellHeight: 0};
+
+            if (this.gridSize) {
+                cellSize.cellWidth  = this.gridSize.cellWidth;
+                cellSize.cellHeight = this.gridSize.cellHeight;
+            }
+
+            const draggingState = {
+                position: {
+                    x: cell_offset * (cellSize.cellWidth  + this.cellMargin.right), 
+                    y: row_offset  * (cellSize.cellHeight + this.cellMargin.bottom)
+                },
+
+                animator: null,
+                itemElement: element
+            };
+            
+            draggingState.animator = new Animator(draggingState);
+            
+            this.orderMatrix.push(new_index);
+            this.gridElements.push(draggingState);
+            
+            element.style.transform  = `translate(${draggingState.position.x}px, ${draggingState.position.y}px)`;
+
+            if (!this.domContainer)
+                this.pendingElements.push(element);
+            else {
+                this.domContainer.appendChild(element);
+
+                if (!this.gridSize) {
+                    const {width, height} = element.getBoundingClientRect();
+                    this.gridSize = {
+                        cellWidth:  width,
+                        cellHeight: height
+                    };
+                }
+            }
         }
 
         initGridElements() {
@@ -571,7 +648,9 @@
         }
 
         static init(conf) {
-            ItemDragger.instances.push(new ItemDragger(conf));
+            const instance = new ItemDragger(conf);
+            ItemDragger.instances.push(instance);
+            return instance;
         }
     }
 

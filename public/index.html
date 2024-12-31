@@ -8,8 +8,9 @@
     <style>
         .container {
             display: flex;
-            width: 400px;
+            width: 1260px;
             flex-wrap: wrap;
+            margin: 302px 333px;
         }
 
         body {
@@ -18,14 +19,22 @@
         }
 
         .item {
-            width: 60px;
-            height: 60px;
-            padding: 5px;
+            width: 200px;
+            height: 250px;
+            /* padding: 5px; */
+        }
+
+        .dragging-mode .item.dragging {
+            z-index: 2;
+        }
+
+        .dragging-mode .item.dragging {
+            z-index: 99;
         }
 
         .dragging-mode .item.dragging .item-box {
             box-shadow: 0 0 6px rgba(0,0,0,.5);
-            opacity: .6;
+            opacity: .8;
         }
         
         .item.on-pressed .item-box {
@@ -54,68 +63,44 @@
 </head>
 <body>
     <div class="container">
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
-        <div class="item"><div class="item-box"></div></div>
 
     </div>
 </body>
 
 <script>
+
+
     (() => {
-        ItemDragger.init({
+
+        // returns: <div class="item"><div class="item-box"></div></div>
+        const createItemElement = () => {
+            const item = document.createElement("div");
+            item.classList.add("item");
+
+            const itemBox = document.createElement("div");
+            itemBox.classList.add("item-box");
+            item.appendChild(itemBox);
+
+            return item;
+        }
+
+        const itemDragger = ItemDragger.init({
             selectors: { 
                 container: ".container", 
-                item:      ".item"
             },
-            ordering: Array.from({ length: document.querySelectorAll(".item").length }, (_, i) => i)
+            cellMargin: {
+                right:  14,
+                bottom: 14 
+            }
         });
+
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        
         ItemDragger.currentInstance.start();
+
+        
     })();
 </script>
 </html>
