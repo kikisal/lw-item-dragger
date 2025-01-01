@@ -518,8 +518,6 @@
             
             this.startGrid_i = Math.floor(boxCenter.y / this.gridSize.cellHeight);
             this.startGrid_j = Math.floor(boxCenter.x / this.gridSize.cellWidth);
-
-            // console.log("starting at: ", this.startGrid_j, this.startGrid_i);
         }
         
         start() {
@@ -627,6 +625,7 @@
 
         // by dom element reference
         removeGridElement(element) {
+
             const el_indx = this.getElementIndexOf(element);
             if (el_indx < 0)
                 return;
@@ -649,15 +648,6 @@
                 if (curr_indx + 1 >= this.orderMatrix.length)
                     break;
 
-                if (this.draggingMode) {
-                    const start_indx = this.startGrid_i * this.gridCells + this.startGrid_j;
-                    if (curr_indx == start_indx)
-                    {
-                        curr_indx++;
-                        continue;
-                    }
-                }
-
                 this.orderMatrix[curr_indx] = this.orderMatrix[curr_indx + 1];
 
                 if (this.draggingMode) {
@@ -677,12 +667,15 @@
 
                 if (grid_el) {
                     const [cell_offset, row_offset] = this.gridLocation(curr_indx);
-                
-                    grid_el.animator.clear();
-                    grid_el.animator.addAnimation(FactoryTasks.moveTo({
-                        x: cell_offset * (this.gridSize.cellWidth  + this.cellMargin.right),
-                        y: row_offset  * (this.gridSize.cellHeight + this.cellMargin.bottom)
-                    }, DEFAULT_MOVE_TO_DURATION));    
+
+                    // no need to add animation to the current element being dragged.
+                    if (this.draggingElement !== grid_el) {
+                        grid_el.animator.clear();
+                        grid_el.animator.addAnimation(FactoryTasks.moveTo({
+                            x: cell_offset * (this.gridSize.cellWidth  + this.cellMargin.right),
+                            y: row_offset  * (this.gridSize.cellHeight + this.cellMargin.bottom)
+                        }, DEFAULT_MOVE_TO_DURATION));
+                    }
                 }
 
                 ++curr_indx;
