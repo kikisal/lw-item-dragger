@@ -79,6 +79,7 @@
 
             const itemBox = document.createElement("div");
             itemBox.classList.add("item-box");
+
             item.appendChild(itemBox);
 
             return item;
@@ -94,12 +95,44 @@
             }
         });
 
+        const el1 = itemDragger.addGridElement(createItemElement());
+        const el2 = itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        let el3 = itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
+        itemDragger.addGridElement(createItemElement());
         itemDragger.addGridElement(createItemElement());
         itemDragger.addGridElement(createItemElement());
         itemDragger.addGridElement(createItemElement());
         
+        
         ItemDragger.currentInstance.start();
 
+        setTimeout(() => {
+            itemDragger.removeGridElement(el3);
+            // itemDragger.removeGridElement(el3);
+            // itemDragger.removeGridElement(el1);
+        }, 4000);
         
     })();
 </script>

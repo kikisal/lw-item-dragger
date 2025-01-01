@@ -570,13 +570,14 @@
             if (!element || !(element instanceof HTMLElement))
                 return;
 
+            
             element.style.position = "absolute";
-
+            
             const new_index                 = this.orderMatrix.length;            
             const [cell_offset, row_offset] = this.gridLocation(new_index);
-
+            
             const cellSize = {cellWidth: 0, cellHeight: 0};
-
+            
             if (this.gridSize) {
                 cellSize.cellWidth  = this.gridSize.cellWidth;
                 cellSize.cellHeight = this.gridSize.cellHeight;
@@ -612,6 +613,97 @@
                     };
                 }
             }
+
+            return element;
+        }
+
+        getElementIndexOf(element) {
+            for (let i = 0; i < this.gridElements.length; ++i) {
+                if (this.gridElements[i].itemElement === element) 
+                    return i;
+            }
+            return -1;
+        }
+
+        // by dom element reference
+        removeGridElement(element) {
+            const el_indx = this.getElementIndexOf(element);
+            if (el_indx < 0)
+                return;
+
+            const order_indx = this.orderMatrix.indexOf(el_indx);
+            if (order_indx < 0) // it shouln't happen
+                return;
+
+            let curr_indx = order_indx;
+
+            if (this.domContainer)
+                this.domContainer.removeChild(element);
+            else {
+                const pe_index = this.pendingElements.indexOf(element);
+                if (pe_index > 0)
+                    this.pendingElements.splice(pe_index, 1);
+            }
+
+            for (;;) {
+                if (curr_indx + 1 >= this.orderMatrix.length)
+                    break;
+
+                if (this.draggingMode) {
+                    const start_indx = this.startGrid_i * this.gridCells + this.startGrid_j;
+                    if (curr_indx == start_indx)
+                    {
+                        curr_indx++;
+                        continue;
+                    }
+                }
+
+                this.orderMatrix[curr_indx] = this.orderMatrix[curr_indx + 1];
+
+                if (this.draggingMode) {
+                    const start_indx = this.startGrid_i * this.gridCells + this.startGrid_j;
+
+                    // here we basically shift to the left the starting grid position
+                    // in case the currently dragging element overlaps with the wrong element
+                    if ((curr_indx + 1) == start_indx)
+                    {
+                        const [col, row] = this.gridLocation(curr_indx);
+                        this.startGrid_i = row;
+                        this.startGrid_j = col;
+                    }
+                }
+
+                const grid_el = this.gridElements[this.orderMatrix[curr_indx]];
+
+                if (grid_el) {
+                    const [cell_offset, row_offset] = this.gridLocation(curr_indx);
+                
+                    grid_el.animator.clear();
+                    grid_el.animator.addAnimation(FactoryTasks.moveTo({
+                        x: cell_offset * (this.gridSize.cellWidth  + this.cellMargin.right),
+                        y: row_offset  * (this.gridSize.cellHeight + this.cellMargin.bottom)
+                    }, DEFAULT_MOVE_TO_DURATION));    
+                }
+
+                ++curr_indx;
+            }
+            
+            // update indeces to any element that points to an index
+            // greater than the currently deleting element index
+            for (let i = 0; i < this.orderMatrix.length; ++i) {
+                if (this.orderMatrix[i] >= el_indx)
+                    this.orderMatrix[i]--;
+            }
+
+            this.orderMatrix.pop();
+            this.gridElements.splice(el_indx, 1);
+        }
+
+        removeGridElementByIndex(indx) {
+            if (indx >= this.gridElements.length || indx < 0)
+                return;
+
+            return this.removeGridElement(this.gridElements[indx].itemElement);
         }
 
         static setCurrentInstance(instance) {
