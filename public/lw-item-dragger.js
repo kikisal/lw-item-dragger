@@ -177,12 +177,46 @@
         }
     }
 
-    class ItemDragger {
+    class WK_EventEmitter {
+        constructor() {
+            this._events       = new Map();
+            this._logWarnings  = true;
+        }
+
+        registerEvent(key, listener) {
+            const listener_array = this._events.get(key);
+            if (!listener_array)
+                this._events.set(key, [listener]);
+            else
+                listener_array.push(listener);
+        }
+
+        fireEvent(event_name) {
+            const listeners = this._events.get(event_name);
+            if (!listeners)
+                return false;
+
+            for (const listener of listeners) {
+                try {
+                    listener(this);
+                } catch(ex) {
+                    if (this._logWarnings)
+                        console.warn(`fireEvent(${event_name}) Exception caught: `, ex);
+                }
+            }
+
+            return true;
+        }
+    }
+
+    class ItemDragger extends WK_EventEmitter {
 
         static currentInstance = null;
         static instances       = [];
 
         constructor(conf) {
+            super();
+
             ItemDragger.setCurrentInstance(this);
 
             this.containerSelector = conf.selectors.container || DEFAULT_CONTAINER_SELECTOR;
@@ -220,6 +254,8 @@
             this.startGrid_j     = 0;
 
             this.needsPositionUpdate = true;
+
+            this.gridLocationCache   = null;
 
             this.orderMatrix         = [];
             this.pendingElements     = [];
@@ -300,9 +336,11 @@
                 pos.y = this.mouseState.y - this.yHitBoxPortion;
                 
                 this.draggingElement.itemElement.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
-
                 
-                const boxCenter = {x: pos.x + this.gridSize.cellWidth * .5, y: pos.y + this.gridSize.cellHeight * .5};
+                const boxCenter = {
+                    x: pos.x + this.gridSize.cellWidth * .5, 
+                    y: pos.y + this.gridSize.cellHeight * .5
+                };
 
                 const grid_j = Math.floor(boxCenter.x / this.gridSize.cellWidth);
                 const grid_i = Math.floor(boxCenter.y / this.gridSize.cellHeight);
@@ -330,13 +368,15 @@
                                 const dir              = (grid_j - this.startGrid_j) / Math.abs(grid_j - this.startGrid_j);
                                 
                                 let collected = undefined;
-            
+
+                                let update_count = 0;
+           
+                                
                                 if (dir < 0) {
         
                                     for (let i = 0; i < spanned_elements + 1; ++i) {
                                         const curr_indx = cells * dest_i + (dest_j + i);
         
-                                        
                                         if (curr_indx >= this.orderMatrix.length || curr_indx < 0)
                                             continue;
             
@@ -360,8 +400,11 @@
                                                 y: dest_i * (this.gridSize.cellHeight + this.cellMargin.bottom)
                                             }, DEFAULT_MOVE_TO_DURATION));    
                                         }
-                                    }        
+                                        
+                                        ++update_count;
+                                    }    
                                 } else {
+
                                     for (let i = 0; i < spanned_elements + 1; ++i) {
                                         const curr_indx = cells * dest_i + (dest_j - i);
                                         
@@ -387,12 +430,17 @@
                                                 x: (dest_j - i - 1) * (this.gridSize.cellWidth + this.cellMargin.right),
                                                 y: dest_i * (this.gridSize.cellHeight + this.cellMargin.bottom)
                                             }, DEFAULT_MOVE_TO_DURATION));
-                                        }                            
+                                        }
+                                        
+                                        ++update_count;
                                     }
                                 }
             
                                 this.startGrid_i = grid_i;
                                 this.startGrid_j = grid_j;
+
+                                if (update_count > 0)
+                                    this.fireEvent(ItemDragger.Events.ORDER_MATRIX_CHANGE);
                             }
                         }
                         // grid_i != this.startGrid_i
@@ -443,13 +491,15 @@
 
                                 this.startGrid_i = dest_i;
                                 this.startGrid_j = dest_j;
+
+                                this.fireEvent(ItemDragger.Events.ORDER_MATRIX_CHANGE);
                             }
                         }
                     }   
                 }    
             }
-
-            // poll and update any animation tasks
+            
+            // poll any animation tasks
             for (const element of this.gridElements) {
                 if (element == this.draggingElement)
                     continue;
@@ -508,16 +558,36 @@
 
             hitElement.itemElement.classList.add("dragging");
 
-            // compute the current i, j of the selected element to drag.
-            const pos = this.draggingElement.position;
+            const currentGridLocation = this.getGridLocationOf(hitElement);
 
-            pos.x = this.mouseState.x - this.xHitBoxPortion;
-            pos.y = this.mouseState.y - this.yHitBoxPortion;
-            
-            const boxCenter = {x: pos.x + this.gridSize.cellWidth * .5, y: pos.y + this.gridSize.cellHeight * .5};
-            
-            this.startGrid_i = Math.floor(boxCenter.y / this.gridSize.cellHeight);
-            this.startGrid_j = Math.floor(boxCenter.x / this.gridSize.cellWidth);
+            if (!currentGridLocation)
+                this.stopDragging(); // for safety
+            else {
+                this.startGrid_i = currentGridLocation.row;
+                this.startGrid_j = currentGridLocation.col;
+            }
+        }
+
+        getGridLocationOf(element) {
+            const el_indx = this.getElementIndexOf(element.itemElement);
+
+            if (el_indx < 0)
+                return null;
+
+            const indx = this.orderMatrix.indexOf(el_indx);
+            if (indx < 0)
+                return null;
+
+            const [col, row] = this.gridLocation(indx);
+
+            if (!this.gridLocationCache)
+                this.gridLocationCache = {row, col};
+            else {
+                this.gridLocationCache.row = row;
+                this.gridLocationCache.col = col;
+            }
+
+            return this.gridLocationCache;
         }
         
         start() {
@@ -567,7 +637,6 @@
         addGridElement(element) {
             if (!element || !(element instanceof HTMLElement))
                 return;
-
             
             element.style.position = "absolute";
             
@@ -709,6 +778,10 @@
             return instance;
         }
     }
+
+    ItemDragger.Events = {
+        ORDER_MATRIX_CHANGE: "order_matrix_change"
+    };
 
     m.ItemDragger = ItemDragger;  
 })(window);

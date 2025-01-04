@@ -86,52 +86,21 @@
         }
 
         const itemDragger = ItemDragger.init({
-            selectors: { 
+            selectors: {
                 container: ".container", 
             },
             cellMargin: {
                 right:  14,
-                bottom: 14 
+                bottom: 14
             }
         });
 
         const el1 = itemDragger.addGridElement(createItemElement());
-        const el2 = itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        let el3 = itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        itemDragger.addGridElement(createItemElement());
-        
         
         ItemDragger.currentInstance.start();
 
         setTimeout(() => {
             itemDragger.removeGridElement(el1);
-            // itemDragger.removeGridElement(el3);
-            // itemDragger.removeGridElement(el1);
         }, 4000);
         
     })();
